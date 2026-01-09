@@ -1,0 +1,26 @@
+
+# Ignora la carpeta dist(compilado)
+dist
+
+# Node modules
+node_modules
+package-lock.json
+ 
+api/node_modules/
+
+# Adonis directory for storing tmp files
+tmp
+
+# Environment variables, never commit this file
+.env
+
+# The development sqlite file
+database/*.sqlite
+
+# VSCode & Webstorm history directories
+.history
+.idea
+# Angular directory
+.angular
+# Ignora archivos del sistema Mac 
+.DS_store
