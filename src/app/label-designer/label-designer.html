@@ -1,0 +1,231 @@
+<div class="form">
+  <label>
+    Código o texto
+    <input type="text" [(ngModel)]="value" (input)="onChange()" [class.invalid]="!!formError && !useBatch" />
+    <small class="err" *ngIf="formError && !useBatch">{{ formError }}</small>
+  </label>
+
+  <label>
+    Plantilla
+    <select [(ngModel)]="selectedTemplate" (change)="onTemplateChange()">
+      <option *ngFor="let t of templates">{{t.name}}</option>
+    </select>
+  </label>
+
+  <label>
+    Modo
+    <select [(ngModel)]="mode" (change)="onChange()">
+      <option value="barcode">Código de barras</option>
+      <option value="qr">QR</option>
+    </select>
+  </label>
+
+  <ng-container *ngIf="mode === 'barcode'; else qrFields">
+    <label>
+      Tipo
+      <select [(ngModel)]="type" (change)="onChange()">
+        <option>CODE128</option>
+        <option>EAN13</option>
+        <option>EAN8</option>
+        <option>UPC</option>
+        <option>ITF14</option>
+        <option>MSI</option>
+        <option>pharmacode</option>
+        <option>codabar</option>
+      </select>
+    </label>
+    <label>
+      Mostrar valor (texto)
+      <input type="checkbox" [(ngModel)]="showValue" (change)="onChange()" />
+    </label>
+  </ng-container>
+  <ng-template #qrFields>
+    <div class="hint">El valor se codificará como QR.</div>
+  </ng-template>
+
+  <label>
+    Ancho (mm)
+    <input type="number" [(ngModel)]="labelWidthMm" (input)="onChange()" min="10" />
+  </label>
+
+  <label>
+    Alto (mm)
+    <input type="number" [(ngModel)]="labelHeightMm" (input)="onChange()" min="10" />
+  </label>
+
+  <label *ngIf="!useBatch">
+    Cantidad
+    <input type="number" [(ngModel)]="quantity" min="1" />
+  </label>
+
+  <label>
+    Formato página
+    <select [(ngModel)]="pageFormat">
+      <option value="a4">A4</option>
+      <option value="letter">Letter</option>
+    </select>
+  </label>
+
+  <label>
+    Layout
+    <select [(ngModel)]="layout" (change)="onChange()">
+      <option value="classic">Clásico</option>
+      <option value="logoLeft">Logo izquierda</option>
+      <option value="codeTop">Código arriba</option>
+    </select>
+  </label>
+  
+  <label>
+    Alineación texto
+    <select [(ngModel)]="bodyAlign" (change)="onChange()">
+      <option value="left">Izquierda</option>
+      <option value="center">Centro</option>
+      <option value="right">Derecha</option>
+    </select>
+  </label>
+
+  <label>
+    Margen (mm)
+    <input type="number" [(ngModel)]="marginMm" min="0" />
+  </label>
+
+  <label title="Tamaño encabezado (proporción)">
+    Encabezado (escala)
+    <input type="number" [(ngModel)]="headerScale" (input)="onChange()" min="0.04" step="0.01" />
+  </label>
+  <label title="Tamaño cuerpo (proporción)">
+    Cuerpo (escala)
+    <input type="number" [(ngModel)]="bodyScale" (input)="onChange()" min="0.04" step="0.01" />
+  </label>
+  <label title="Tamaño pie (proporción)">
+    Pie (escala)
+    <input type="number" [(ngModel)]="footerScale" (input)="onChange()" min="0.04" step="0.01" />
+  </label>
+
+  <label title="Calidad de imagen para PDF/impresión">
+    DPI
+    <input type="number" [(ngModel)]="dpi" min="96" step="50" />
+  </label>
+
+  <label>
+    Encabezado
+    <input type="text" [(ngModel)]="headerText" (input)="onChange()" />
+  </label>
+  <label>
+    Descripción
+    <input type="text" [(ngModel)]="description" (input)="onChange()" />
+  </label>
+  <label>
+    Precio
+    <input type="text" [(ngModel)]="price" (input)="onChange()" />
+  </label>
+  <label>
+    Lote
+    <input type="text" [(ngModel)]="lot" (input)="onChange()" />
+  </label>
+  <label>
+    Pie de página
+    <input type="text" [(ngModel)]="footerText" (input)="onChange()" />
+  </label>
+
+  <label>
+    Logo (opcional)
+    <input type="file" accept="image/*" (change)="onLogoSelected($event)" />
+  </label>
+  <div class="logo-preview" *ngIf="logoDataUrl">
+    <img [src]="logoDataUrl" alt="logo" />
+    <button type="button" (click)="clearLogo()">Quitar logo</button>
+  </div>
+
+  <label>
+    Cargar Excel
+    <input type="file" accept=".xlsx,.xls" (change)="onExcelSelected($event)" />
+  </label>
+  <button type="button" (click)="downloadExcelTemplate()">Descargar plantilla Excel</button>
+  <label>
+    Usar datos del Excel
+    <input type="checkbox" [(ngModel)]="useBatch" />
+  </label>
+  <div class="hint" *ngIf="batchItems.length">{{batchItems.length}} filas cargadas</div>
+  <div class="hint" *ngIf="batchErrors.length && batchHasErrors">
+    {{batchErrorCount}} filas con errores. Se omitirán al exportar/imprimir.
+  </div>
+
+  <ng-container *ngIf="useBatch && batchItems.length">
+    <label>
+      Fila para vista previa
+      <select [ngModel]="selectedBatchIndex" (ngModelChange)="setSelectedBatchIndex($event)">
+        <option *ngFor="let it of batchItems; let i = index" [ngValue]="i">Fila {{i+1}} - {{it.value}}</option>
+      </select>
+    </label>
+    <div class="hint">La cantidad se toma de la columna "Cantidad" del Excel para cada fila.</div>
+
+    <fieldset class="mapping">
+      <legend>Mapeo de columnas (opcional)</legend>
+      <div class="mapping-grid">
+        <label>Codigo <input type="text" [(ngModel)]="customMap['Codigo']" /></label>
+        <label>Tipo <input type="text" [(ngModel)]="customMap['Tipo']" /></label>
+        <label>Modo <input type="text" [(ngModel)]="customMap['Modo']" /></label>
+        <label>Cantidad <input type="text" [(ngModel)]="customMap['Cantidad']" /></label>
+        <label>Descripcion <input type="text" [(ngModel)]="customMap['Descripcion']" /></label>
+        <label>Precio <input type="text" [(ngModel)]="customMap['Precio']" /></label>
+        <label>Lote <input type="text" [(ngModel)]="customMap['Lote']" /></label>
+        <label>Encabezado <input type="text" [(ngModel)]="customMap['Encabezado']" /></label>
+        <label>Pie <input type="text" [(ngModel)]="customMap['Pie']" /></label>
+        <label>LogoUrl <input type="text" [(ngModel)]="customMap['LogoUrl']" /></label>
+        <label>Ancho_mm <input type="text" [(ngModel)]="customMap['Ancho_mm']" /></label>
+        <label>Alto_mm <input type="text" [(ngModel)]="customMap['Alto_mm']" /></label>
+        <label>Margen_mm <input type="text" [(ngModel)]="customMap['Margen_mm']" /></label>
+        <label>DPI <input type="text" [(ngModel)]="customMap['DPI']" /></label>
+        <label>Layout <input type="text" [(ngModel)]="customMap['Layout']" /></label>
+        <label>Alineacion <input type="text" [(ngModel)]="customMap['Alineacion']" /></label>
+        <label>EscalaEncabezado <input type="text" [(ngModel)]="customMap['EscalaEncabezado']" /></label>
+        <label>EscalaCuerpo <input type="text" [(ngModel)]="customMap['EscalaCuerpo']" /></label>
+        <label>EscalaPie <input type="text" [(ngModel)]="customMap['EscalaPie']" /></label>
+      </div>
+      <button type="button" (click)="applyCustomMapping()">Aplicar mapeo</button>
+    </fieldset>
+
+    <div class="errors" *ngIf="batchHasErrors">
+      <div *ngFor="let err of batchErrors; let i = index" class="err" [hidden]="!err">
+        Fila {{i+1}}: {{err}}
+      </div>
+    </div>
+  </ng-container>
+
+  <div class="actions">
+    <button (click)="exportPdf()">Exportar PDF</button>
+    <button (click)="exportPng()">Descargar PNG</button>
+    <button (click)="printPage()">Imprimir</button>
+    <button (click)="exportExcel()">Exportar Excel</button>
+    <button *ngIf="useBatch && batchItems.length" (click)="exportPdfPorFila()">PDF por fila</button>
+    <button *ngIf="useBatch && batchItems.length" (click)="exportPngPorFilaZip()">PNG por fila (ZIP)</button>
+    <button *ngIf="useBatch && batchItems.length" (click)="resetBatch()">Limpiar lote</button>
+    <button (click)="resetForm()">Limpiar formulario</button>
+    <button (click)="resetMapping()">Limpiar mapeo</button>
+  </div>
+
+  <fieldset class="mapping">
+    <legend>Preferencias</legend>
+    <label>
+      Preguntar al limpiar formulario
+      <input type="checkbox" [(ngModel)]="confirmOnResetForm" (change)="onToggleConfirmPrefs()" />
+    </label>
+    <label>
+      Preguntar al limpiar mapeo
+      <input type="checkbox" [(ngModel)]="confirmOnResetMapping" (change)="onToggleConfirmPrefs()" />
+    </label>
+  </fieldset>
+
+  <div class="note">Consejo: aumenta DPI si la impresión sale borrosa. Columnas reconocidas en Excel: Codigo/Valor, Tipo, Modo, Cantidad, Descripcion, Precio, Lote, Encabezado, Pie, Ancho_mm, Alto_mm, Margen_mm, DPI, Layout, Alineacion, EscalaEncabezado, EscalaCuerpo, EscalaPie, LogoUrl.</div>
+</div>
+
+<div class="preview">
+  <div class="preview-label" [style.width.px]="labelWidthMm * 3.78" [style.height.px]="labelHeightMm * 3.78">
+    <canvas #previewCanvas></canvas>
+</div>
+  <small>Vista previa (escala aproximada)</small>
+</div>
+<div class="errors" *ngIf="renderError">
+  <div class="err">{{ renderError }}</div>
+</div>
